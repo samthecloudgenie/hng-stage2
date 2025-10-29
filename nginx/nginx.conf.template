@@ -1,0 +1,64 @@
+user  nginx;
+worker_processes  auto;
+error_log  /var/log/nginx/error.log warn;
+pid        /var/run/nginx.pid;
+
+env ACTIVE_POOL;
+env BLUE_HOST;
+env BLUE_PORT;
+env GREEN_HOST;
+env GREEN_PORT;
+env PROXY_CONNECT_TIMEOUT;
+env PROXY_SEND_TIMEOUT;
+env PROXY_READ_TIMEOUT;
+
+events { worker_connections 1024; }
+
+http {
+    include       mime.types;
+    default_type  application/octet-stream;
+    sendfile        on;
+
+    # upstream - templated order depends on ACTIVE_POOL value
+    # We'll substitute below by envsubst to set which server is primary
+    upstream backend_pool {
+        # primary server (first listed) gets normal role; second is backup
+        server ${PRIMARY_HOST}:${PRIMARY_PORT} max_fails=1 fail_timeout=2s;
+        server ${SECONDARY_HOST}:${SECONDARY_PORT} backup;
+    }
+
+    server {
+        listen 80;
+        server_name _;
+
+        # forward request headers
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # timeouts - tight to detect failure quickly
+        proxy_connect_timeout ${PROXY_CONNECT_TIMEOUT:-1s};
+        proxy_send_timeout ${PROXY_SEND_TIMEOUT:-5s};
+        proxy_read_timeout ${PROXY_READ_TIMEOUT:-5s};
+
+        # Retry policy: consider error, timeout, and 5xx retriable
+        proxy_next_upstream error timeout http_502 http_503 http_504 http_500 http_429;
+        proxy_next_upstream_tries 2;
+
+        # ensure upstream response headers (X-App-Pool, X-Release-Id) are forwarded
+        proxy_pass_header X-App-Pool;
+        proxy_pass_header X-Release-Id;
+
+        location / {
+            proxy_pass http://backend_pool;
+        }
+
+        # optional: expose health endpoint for nginx itself
+        location /nginx_status {
+            stub_status on;
+            allow 127.0.0.1;
+            deny all;
+        }
+    }
+}

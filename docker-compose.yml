@@ -1,0 +1,44 @@
+version: "3.8"
+
+services:
+  app_blue:
+    image: "${BLUE_IMAGE}"
+    environment:
+      - RELEASE_ID=${RELEASE_ID_BLUE}
+      - APP_POOL=blue
+      - PORT=${APP_PORT:-3000}
+    ports:
+      - "${BLUE_HOST_PORT:-8081}:${APP_PORT:-3000}"
+    restart: unless-stopped
+
+  app_green:
+    image: "${GREEN_IMAGE}"
+    environment:
+      - RELEASE_ID=${RELEASE_ID_GREEN}
+      - APP_POOL=green
+      - PORT=${APP_PORT:-3000}
+    ports:
+      - "${GREEN_HOST_PORT:-8082}:${APP_PORT:-3000}"
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:1.25
+    depends_on:
+      - app_blue
+      - app_green
+    environment:
+      - ACTIVE_POOL=${ACTIVE_POOL}
+      - BLUE_HOST=host.docker.internal
+      - BLUE_PORT=${BLUE_HOST_PORT:-8081}
+      - GREEN_HOST=host.docker.internal
+      - GREEN_PORT=${GREEN_HOST_PORT:-8082}
+      - PROXY_CONNECT_TIMEOUT=1s
+      - PROXY_SEND_TIMEOUT=5s
+      - PROXY_READ_TIMEOUT=5s
+    volumes:
+      - ./nginx/nginx.conf.template:/etc/nginx/nginx.conf.template:ro
+      - ./nginx/entrypoint.sh:/entrypoint.sh:ro
+    ports:
+      - "${NGINX_HOST_PORT:-8080}:80"
+    entrypoint: ["/bin/sh","/entrypoint.sh"]
+    restart: unless-stopped
