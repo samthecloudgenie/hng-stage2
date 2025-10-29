@@ -27,20 +27,18 @@ services:
       - app_blue
       - app_green
     environment:
-environment:
-  - ACTIVE_POOL=${ACTIVE_POOL}
-  - BLUE_HOST=app_blue
-  - BLUE_PORT=${APP_PORT:-3000}
-  - GREEN_HOST=app_green
-  - GREEN_PORT=${APP_PORT:-3000}
-  - PROXY_CONNECT_TIMEOUT=1s
-  - PROXY_SEND_TIMEOUT=5s
-  - PROXY_READ_TIMEOUT=5s
-
+      - ACTIVE_POOL=${ACTIVE_POOL}
+      - BLUE_HOST=app_blue
+      - BLUE_PORT=${APP_PORT:-3000}
+      - GREEN_HOST=app_green
+      - GREEN_PORT=${APP_PORT:-3000}
+      - PROXY_CONNECT_TIMEOUT=1s
+      - PROXY_SEND_TIMEOUT=5s
+      - PROXY_READ_TIMEOUT=5s
     volumes:
       - ./nginx/nginx.conf.template:/etc/nginx/nginx.conf.template:ro
       - ./nginx/entrypoint.sh:/entrypoint.sh:ro
     ports:
       - "${NGINX_HOST_PORT:-8080}:80"
-    entrypoint: ["/bin/sh","/entrypoint.sh"]
+    entrypoint: ["/bin/sh", "/entrypoint.sh"]
     restart: unless-stopped
