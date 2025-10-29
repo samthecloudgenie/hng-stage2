@@ -32,9 +32,10 @@ services:
       - BLUE_PORT=${APP_PORT:-3000}
       - GREEN_HOST=app_green
       - GREEN_PORT=${APP_PORT:-3000}
-      - PROXY_CONNECT_TIMEOUT=1
-      - PROXY_SEND_TIMEOUT=5
-      - PROXY_READ_TIMEOUT=5
+      - PROXY_CONNECT_TIMEOUT=1s
+      - PROXY_SEND_TIMEOUT=5s
+      - PROXY_READ_TIMEOUT=5s
+
     volumes:
       - ./nginx/nginx.conf.template:/etc/nginx/nginx.conf.template:ro
       - ./nginx/entrypoint.sh:/entrypoint.sh:ro
