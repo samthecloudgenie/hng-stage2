@@ -14,8 +14,10 @@ else
   export SECONDARY_PORT="${GREEN_PORT:-8082}"
 fi
 
-# Render template
-envsubst '${PRIMARY_HOST} ${PRIMARY_PORT} ${SECONDARY_HOST} ${SECONDARY_PORT} ${PROXY_CONNECT_TIMEOUT} ${PROXY_READ_TIMEOUT} ${PROXY_SEND_TIMEOUT}' \
+# Render nginx config from template (include all env vars used)
+envsubst '${ACTIVE_POOL} ${BLUE_HOST} ${BLUE_PORT} ${GREEN_HOST} ${GREEN_PORT} \
+${PRIMARY_HOST} ${PRIMARY_PORT} ${SECONDARY_HOST} ${SECONDARY_PORT} \
+${PROXY_CONNECT_TIMEOUT} ${PROXY_READ_TIMEOUT} ${PROXY_SEND_TIMEOUT}' \
   < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf
 
 # Start nginx in foreground
